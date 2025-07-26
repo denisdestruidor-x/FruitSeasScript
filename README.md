@@ -262,7 +262,7 @@ function FarmLevel()
 				repeat
 					PlayerTP(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
 					DealDamage({enemy}) -- Pass enemy as table
-					wait(0.1) -- Small delay to prevent overwhelming
+					task.wait() -- Wait a bit to avoid spamming
 				until enemy.Humanoid.Health <= 0 or not _ENV.OnLevelFarm
 			end
 		end
