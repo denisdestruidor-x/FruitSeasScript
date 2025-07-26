@@ -4,6 +4,7 @@ _ENV.OnLevelFarm = false
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
@@ -11,6 +12,14 @@ local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 local ServerMove = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ServerMove")
 local NPCFolder = workspace:WaitForChild("NPC"):WaitForChild("Fight")
 local ATTACK_RADIUS = 20 -- Raio do Kill Aura
+
+-- Initialize connections table
+local Connections = {}
+
+-- Helper function to check if character is alive
+local function IsAlive(character)
+    return character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0
+end
 
 local BodyVelocity
 do
@@ -51,8 +60,9 @@ do
 		Character.DescendantRemoving:Connect(RemoveObjectsFromBaseParts)
 	end
 
-	table.insert(Connections, Player.CharacterAdded:Connect(NewCharacter))
-	task.spawn(NewCharacter, Player.Character)
+	-- Fixed: Use LocalPlayer instead of undefined Player
+	table.insert(Connections, LocalPlayer.CharacterAdded:Connect(NewCharacter))
+	task.spawn(NewCharacter, LocalPlayer.Character)
 
 	local function NoClipOnStepped(Character)
 		if _ENV.OnFarm then
@@ -87,7 +97,8 @@ do
 	table.insert(
 		Connections,
 		RunService.Stepped:Connect(function()
-			local Character = Player.Character
+			-- Fixed: Use LocalPlayer instead of undefined Player
+			local Character = LocalPlayer.Character
 
 			if IsAlive(Character) then
 				UpdateVelocityOnStepped(Character)
@@ -138,8 +149,9 @@ do
 	end
 
 	local function TweenStopped()
-		if not BodyVelocity.Parent and IsAlive(Player.Character) then
-			TweenCreator:stopTween(Player.Character:FindFirstChild("HumanoidRootPart"))
+		-- Fixed: Use LocalPlayer instead of undefined Player
+		if not BodyVelocity.Parent and IsAlive(LocalPlayer.Character) then
+			TweenCreator:stopTween(LocalPlayer.Character:FindFirstChild("HumanoidRootPart"))
 		end
 	end
 
@@ -148,13 +160,14 @@ do
 	local TweenSpeed = 75
 
 	PlayerTP = function(TargetCFrame)
-		if not IsAlive(Player.Character) or not Player.Character.PrimaryPart then
+		-- Fixed: Use LocalPlayer instead of undefined Player
+		if not IsAlive(LocalPlayer.Character) or not LocalPlayer.Character.PrimaryPart then
 			return false
 		elseif (tick() - lastTeleport) <= 1 and lastCFrame == TargetCFrame then
 			return false
 		end
 
-		local Character = Player.Character
+		local Character = LocalPlayer.Character
 		local Humanoid = Character.Humanoid
 		local PrimaryPart = Character.PrimaryPart
 
@@ -211,7 +224,6 @@ function GetQuestThings(character)
 	end
 end
 
-
 function AnbandonQuest()
 	game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("ToServer"):WaitForChild("AbandonQuest")
 end
@@ -219,7 +231,7 @@ end
 function GetQuest()
 	PlayerTP(_ENV.QuestCFrame)
 	local args = {
-		_G.QuestNpc,
+		_ENV.QuestNpc, -- Fixed: Use _ENV instead of _G
 	}
 	game:GetService("ReplicatedStorage")
 		:WaitForChild("Remotes")
@@ -244,12 +256,14 @@ end
 
 function FarmLevel()
 	if _ENV.OnLevelFarm then
+		GetQuestThings() -- Call this to set up quest variables
 		for _, enemy in ipairs(_ENV.NpcToKillFolder:GetChildren()) do
-			if enemy:IsA("Model") and enemy:FindFirstChild("HumanoidRootPart") then
+			if enemy:IsA("Model") and enemy:FindFirstChild("HumanoidRootPart") and enemy:FindFirstChild("Humanoid") then
 				repeat
-				PlayerTP(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
-				DealDamage(enemy)
-				until enemy.Humanoid.Health <= 0
+					PlayerTP(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+					DealDamage({enemy}) -- Pass enemy as table
+					wait(0.1) -- Small delay to prevent overwhelming
+				until enemy.Humanoid.Health <= 0 or not _ENV.OnLevelFarm
 			end
 		end
 	end
@@ -267,7 +281,14 @@ do
 		false,
 		function(Value)
 			_ENV.OnLevelFarm = Value
-			FarmLevel()
+			if Value then
+				spawn(function()
+					while _ENV.OnLevelFarm do
+						FarmLevel()
+						wait(1)
+					end
+				end)
+			end
 		end,
 	})
 end
