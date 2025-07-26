@@ -270,7 +270,7 @@ function FarmLevel()
 end
 
 local Libary = loadstring(game:HttpGet("https://raw.githubusercontent.com/tlredz/Library/refs/heads/main/V5/Source.lua"))()
-local Window = Libary:MakeWindow({ "Vox seas Hub", "Ez levelmax", "rz-VoxSeas.json" })
+local Window = Libary:MakeWindow({ "Fruits Seas Script", "Ez levelmax", "rz-FruitSeas.json" })
 
 local MainTab = Window:MakeTab({ "Farm", "Home" })
 
