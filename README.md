@@ -157,7 +157,7 @@ do
 
 	local lastCFrame = nil
 	local lastTeleport = 0
-	local TweenSpeed = 75
+	local TweenSpeed = 300
 
 	PlayerTP = function(TargetCFrame)
 		-- Fixed: Use LocalPlayer instead of undefined Player
@@ -258,9 +258,9 @@ function FarmLevel()
 	if _ENV.OnLevelFarm then
 		GetQuestThings() -- Call this to set up quest variables
 		for _, enemy in ipairs(_ENV.NpcToKillFolder:GetChildren()) do
-			if enemy:IsA("Model") and enemy:FindFirstChild("HumanoidRootPart") and enemy:FindFirstChild("Humanoid") then
+			if enemy:IsA("Model") and enemy:FindFirstChild("HumanoidRootPart") and enemy:FindFirstChild("Humanoid") and enemy.Name = _ENV.NpcToKill then
 				repeat
-					PlayerTP(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+					PlayerTP(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
 					DealDamage({enemy}) -- Pass enemy as table
 					wait(0.1) -- Small delay to prevent overwhelming
 				until enemy.Humanoid.Health <= 0 or not _ENV.OnLevelFarm
